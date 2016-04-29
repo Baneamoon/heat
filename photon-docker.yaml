@@ -97,21 +97,6 @@ resources:
       router_id: { get_resource: app_router_01 }
       subnet_id: { get_resource: database_subnet }
   # Create Server ports
-  etcd_port0:
-    type: OS::Neutron::Port
-    properties:
-      admin_state_up: true
-      network_id: { get_resource: database_net }
-  # Provision etcd instance
-  etcd-instance:
-    type: OS::Nova::Server
-    properties:
-      name: etcd-instance
-      image: { get_param: photon_image }
-      flavor: m1.small
-      networks:
-        - port: { get_resource: etcd_port0 }
-  # Create Server ports
   mysql_port0:
     type: OS::Neutron::Port
     properties:
@@ -137,16 +122,16 @@ resources:
             apt-get update
             export DEBIAN_FRONTEND=noninteractive
             apt-get install -y mysql-server
- 
+
             # configure MySQL root password
             mysqladmin -u root password "__mysql_root_password__"
- 
+
             # listen on all network interfaces
             sed -i "s/bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/my.cnf
- 
+
             # restart service
             service mysql restart
- 
+
             #wc_notify --data-binary '{"status": "SUCCESS"}'
   # Create Container ports
   container0_port0:
@@ -179,6 +164,9 @@ resources:
             config-file-provider:2.7.5
             ssh-slaves:1.9
             openstack-cloud:1.8
+            ant:1.2
+            artifactory:2.4.7
+            git:2.4.4
             EOF
             #
             # # Create Dockerfile
@@ -195,11 +183,6 @@ resources:
     properties:
       floating_network_id: { get_param: external_network_id }
       port_id: { get_resource: container0_port0 }
-  etcd_floater:
-    type: OS::Neutron::FloatingIP
-    properties:
-      floating_network_id: { get_param: external_network_id }
-      port_id: { get_resource: etcd_port0 }
   mysql_floater:
     type: OS::Neutron::FloatingIP
     properties:
@@ -211,13 +194,10 @@ outputs:
     description: Floating IP address of photon instance in public network
     value: { get_attr: [ container0_floater, floating_ip_address ] }
 
-  etcd_pulic_ip:
-    description: Floating IP address of photon instance in public network
-    value: { get_attr: [ etcd_floater, floating_ip_address ] }
-
   mysql_pulic_ip:
     description: Floating IP address of photon instance in public network
     value: { get_attr: [ mysql_floater, floating_ip_address ] }
+
   mysql_private_ip:
     description: The IP address of the MySQL instance.
     value: { get_attr: [mysql_instance, first_address] }
