@@ -30,25 +30,14 @@ parameters:
   container_one:
     type: string
     description: Name of Docker Hub container to use
-    default: socialwifi/gerrit
+    default: greent/gerrit:v1p
 
+  mysql_root_password:
+    type: string
+    description: MySQL root password
+    hidden: true
 
 resources:
-  #wait_condition:
-  #  type: OS::Heat::WaitCondition
-  #  properties:
-  #    handle: { get_resource: wait_handle }
-  #    count: 1
-  #    timeout: 600
-
-  #wait_handle:
-  #  type: OS::Heat::WaitConditionHandle
-  # Generate mysql root password
-  mysql_root_password:
-    type: OS::Heat::RandomString
-    properties:
-      length: 32
-      sequence: lettersdigits
   # Create the container logical switch and configure DHCP.
   container_net:
     type: OS::Neutron::Net
@@ -60,7 +49,7 @@ resources:
     properties:
       name: container-subnet
       cidr: 192.168.42.0/24
-      dns_nameservers: [192.168.110.10]
+      dns_nameservers: [192.168.64.60]
       enable_dhcp: true
       gateway_ip: 192.168.42.1
       network_id: { get_resource: container_net }
@@ -75,7 +64,7 @@ resources:
     properties:
       name: database-subnet
       cidr: 192.168.43.0/24
-      dns_nameservers: [192.168.110.10]
+      dns_nameservers: [192.168.64.60]
       enable_dhcp: true
       gateway_ip: 192.168.43.1
       network_id: { get_resource: database_net }
@@ -114,7 +103,7 @@ resources:
       user_data:
         str_replace:
           params:
-            __mysql_root_password__: { get_attr: [mysql_root_password, value] }
+            __mysql_root_password__: { get_param: mysql_root_password }
             #wc_notify: { get_attr: ['wait_handle', 'curl_cli'] }
           template: |
             #!/bin/bash
@@ -158,12 +147,12 @@ resources:
             set -ux
             # Install Jenkins and Gerrit Containers
             docker pull __container1__
-            docker run -d -p 9000:8080 -p 29418:29418 __container1__
+            docker run -d --name gerrit -p 8080:8080 -p 29418:29418 __container1__
             # Create the Jenkins plugins.txt
             cat > /tmp/plugins.txt <<EOF
-            config-file-provider:2.7.5
+            config-file-provider:2.10.1
             ssh-slaves:1.9
-            openstack-cloud:1.8
+            openstack-cloud:2.3
             ant:1.2
             artifactory:2.4.7
             git:2.4.4
@@ -171,12 +160,14 @@ resources:
             #
             # # Create Dockerfile
             cat > /tmp/Dockerfile <<EOF
-            FROM jenkins
+            FROM greent/jenkins
             COPY plugins.txt /usr/share/jenkins/plugins.txt
             RUN /usr/local/bin/plugins.sh /usr/share/jenkins/plugins.txt
             EOF
             docker build -t jenkins/plugins -f /tmp/Dockerfile /tmp
-            docker run -d -p 8080:8080 -p 50000:50000 jenkins/plugins
+            docker run -d --name jenkins -p 8082:8080 -p 50000:50000 jenkins/plugins
+            docker pull greent/httpd
+            docker run -d --name apache -p 80:80 greent/httpd
   # Attach floating IP
   container0_floater:
     type: OS::Neutron::FloatingIP
@@ -207,6 +198,3 @@ outputs:
   port:
     description: The network port of the MySQL instance.
     value: { get_resource: port }
-  database_password:
-    description: The MySQL root password.
-    value: { get_attr: [mysql_root_password, value] }
