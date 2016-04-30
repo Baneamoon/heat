@@ -14,7 +14,7 @@ parameters:
   photon_image:
     type: string
     description: Name of image to use for servers
-    default: photonop
+    default: photon
 
   mysql_image:
     type: string
@@ -31,6 +31,11 @@ parameters:
     type: string
     description: Name of Docker Hub container to use
     default: greent/gerrit:v1p
+
+  container_two:
+    type: string
+    description: Artifactory Container
+    default: jfrog-docker-reg2.bintray.io/jfrog/artifactory-oss
 
   mysql_root_password:
     type: string
@@ -168,12 +173,44 @@ resources:
             docker run -d --name jenkins -p 8082:8080 -p 50000:50000 jenkins/plugins
             docker pull greent/httpd
             docker run -d --name apache -p 80:80 greent/httpd
+
+  container1_port0:
+    type: OS::Neutron::Port
+    properties:
+      admin_state_up: true
+      network_id: { get_resource: container_net }
+  # Provision Container instance
+  container1-instance:
+    type: OS::Nova::Server
+    properties:
+      name: container1-instance
+      image: { get_param: photon_image }
+      flavor: m1.small
+      networks:
+        - port: { get_resource: container0_port0 }
+      user_data_format: RAW
+      user_data:
+        str_replace:
+          params:
+            __container2__: { get_param: container_two }
+          template: |
+            #!/bin/bash
+            set -ux
+            # Install Artifactory Container
+            docker pull __container2__
+            docker run -d --name artifactory -p 8080:8080 -p 80:80 -p 443:443 __container2__
+
   # Attach floating IP
   container0_floater:
     type: OS::Neutron::FloatingIP
     properties:
       floating_network_id: { get_param: external_network_id }
       port_id: { get_resource: container0_port0 }
+  container1_floater:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network_id: { get_param: external_network_id }
+      port_id: { get_resource: container1_port0 }
   mysql_floater:
     type: OS::Neutron::FloatingIP
     properties:
