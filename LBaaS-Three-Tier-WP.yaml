@@ -440,13 +440,10 @@ outputs:
     description: Wordpress URL
     value:
       str_replace:
-        template: http://host/
+        template: http://denvervmug.ddns.net/
         params:
           host: { get_attr: [ lb_floating, floating_ip_address ] }
-  web-svr-01_public_ip:
+  NSX-LBer-IP:
     description: Floating IP address of web-svr-01 in public network
-    value: { get_attr: [ web-svr-01_floating_ip, floating_ip_address ] }
-  web-svr-02_public_ip:
-    description: Floating IP address of web-svr-01 in public network
-    value: { get_attr: [ web-svr-02_floating_ip, floating_ip_address ] }
+    value: { get_attr: [ lb_floating, floating_ip_address ] }
 
