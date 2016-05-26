@@ -281,6 +281,11 @@ resources:
             sed -i 's/username_here/__database_user__/' wordpress/wp-config.php
             sed -i 's/password_here/__database_password__/' wordpress/wp-config.php
             sed -i 's/localhost/__mysql_ip__/' wordpress/wp-config.php
+            cat > /wordpress/site.conf <<EOF
+            define('WP_HOME','http://denvervmug.ddns.net');
+            define('WP_SITEURL','http://denvervmug.ddns.net');
+            EOF
+            cat wordpress/site.conf >> wp-config.php
             # install a copy of the configured wordpress into apache's www directory
             rm /var/www/html/index.html
             cp -R wordpress/* /var/www/html/

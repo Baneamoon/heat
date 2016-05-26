@@ -9,7 +9,7 @@ parameters:
     type: string
     label: ext-net
     description: UUID of a Neutron external network
-    default: 7092826e-d36b-46af-953b-fe587444a6c8
+    default: fdb92e61-75e4-47ef-9b74-557af5b6147d
 
   photon_image:
     type: string
@@ -187,7 +187,7 @@ resources:
       image: { get_param: photon_image }
       flavor: m1.small
       networks:
-        - port: { get_resource: container0_port0 }
+        - port: { get_resource: container1_port0 }
       user_data_format: RAW
       user_data:
         str_replace:
@@ -198,7 +198,7 @@ resources:
             set -ux
             # Install Artifactory Container
             docker pull __container2__
-            docker run -d --name artifactory -p 8080:8080 -p 80:80 -p 443:443 __container2__
+            docker run -d --name artifactory -p 8081:8081 -p 80:80 -p 443:443 __container2__
 
   # Attach floating IP
   container0_floater:
