@@ -440,7 +440,7 @@ outputs:
     description: Wordpress URL
     value:
       str_replace:
-        template: http://denvervmug.ddns.net/
+        template: http://viovbrownbag.ddns.net/
         params:
           host: { get_attr: [ lb_floating, floating_ip_address ] }
   NSX-LBer-IP:
