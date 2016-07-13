@@ -1,7 +1,7 @@
 heat_template_version: 2013-05-23
 
 description: |
-  Sample heat template for quick deployment of LB and two Web VMs.
+ Test Sample heat template for quick deployment of LB and two Web VMs.
 
 parameters:
   external_network_id:
