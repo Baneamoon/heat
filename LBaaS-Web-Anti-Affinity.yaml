@@ -1,3 +1,4 @@
+tosca_definitions_version: cloudify_dsl_1_3
 heat_template_version: 2013-05-23
 
 description: |
